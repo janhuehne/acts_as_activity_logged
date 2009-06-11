@@ -71,8 +71,11 @@ module NewBamboo #:nodoc:
             self.models = options.delete(:models)
             
             cattr_accessor :userstamp
-            self.userstamp = options.delete(:timestamp)
-                        
+            self.userstamp = options.delete(:userstamp)
+            
+            cattr_accessor :log_actions
+            self.log_actions = options.has_key?(:only) ? [ options.delete(:only) ].flatten : [ :create, :update, :destroy ]
+            
             after_create :activity_log_create
             after_update :activity_log_update
             after_destroy :activity_log_destroy
@@ -86,15 +89,15 @@ module NewBamboo #:nodoc:
         private        
         # Creates a new record in the activity_logs table if applicable
         def activity_log_create
-          write_activity_log(:create)
+          write_activity_log(:create) if self.log_actions.include?(:create)
         end
 
         def activity_log_update
-          write_activity_log(:update)
+          write_activity_log(:update) if self.log_actions.include?(:update)
         end
 
         def activity_log_destroy
-          write_activity_log(:destroy)
+          write_activity_log(:destroy) if self.log_actions.include?(:destroy)
         end
         
         # This writes the activity log, but if the :delay_after_create option is set, it will only write
@@ -116,10 +119,10 @@ module NewBamboo #:nodoc:
         # otherwise use the models user method.
         # http://delynnberry.com/projects/userstamp/
         def set_culprit
-          @culprit ||= (self.userstamp ? User.current_user : self.send(models[:culprit][:model].to_s)) if 
-                                                                          !models.nil? &&
-                                                                          models.has_key?(:culprit) && 
-                                                                          models[:culprit].has_key?(:model)
+          @culprit ||= User.current_user if self.userstamp
+          @culprit ||= self.send(models[:culprit][:model].to_s) if !models.nil? &&
+                                                                   models.has_key?(:culprit) && 
+                                                                   models[:culprit].has_key?(:model)
         end
         
         def set_referenced
