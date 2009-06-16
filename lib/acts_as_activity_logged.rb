@@ -74,7 +74,7 @@ module NewBamboo #:nodoc:
             self.userstamp = options.delete(:userstamp)
             
             cattr_accessor :log_actions
-            self.log_actions = options.has_key?(:only) ? [ options.delete(:only) ].flatten : [ :create, :update, :destroy ]
+            self.log_actions = options.has_key?(:only) ? [ options.delete(:only) ].flatten : [ :create, :update ]
             
             after_create :activity_log_create
             after_update :activity_log_update
